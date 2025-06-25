@@ -16,6 +16,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { LS, LSKeys } from './ls';
 import { appSt } from './style.css';
 import { ThxLayout } from './thx/ThxLayout';
+import { GaPayload, sendDataToGA } from './utils/events';
 
 function calculateMonthlyPayment(annualRate: number, periodsPerYear: number, totalPeriods: number, loanAmount: number) {
   const monthlyRate = annualRate / periodsPerYear;
@@ -56,6 +57,12 @@ const swiperPaymentToText: Record<string, { title: string; subtitle: string }> =
   Имущества: { title: 'Имущества', subtitle: 'Под залог' },
 };
 
+const swiperPaymentToGa: Record<string, GaPayload['chosen_option']> = {
+  'Без залога': 'nothing',
+  Авто: 'auto',
+  Имущества: 'property',
+};
+
 export const App = () => {
   const [openPop, setPop] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -87,9 +94,16 @@ export const App = () => {
   const submit = () => {
     setLoading(true);
 
-    // LS.setItem(LSKeys.ShowThx, true);
-    setThx(true);
-    setLoading(false);
+    sendDataToGA({
+      sum_cred: amount.toFixed(2),
+      srok_kredita: years,
+      platezh_mes: monthlyAmount.toFixed(2),
+      chosen_option: swiperPaymentToGa[swiperPayment],
+    }).then(() => {
+      LS.setItem(LSKeys.ShowThx, true);
+      setThx(true);
+      setLoading(false);
+    });
   };
 
   const handleSumInputChange: OnInputChangeType = (_, { value }) => {
